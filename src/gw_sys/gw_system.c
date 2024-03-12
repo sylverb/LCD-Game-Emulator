@@ -192,38 +192,18 @@ static int gw_audio_buffer_idx = 0;
 
 /* Audio buffer */
 unsigned char gw_audio_buffer[GW_AUDIO_BUFFER_LENGTH * 2];
-bool gw_audio_buffer_copied;
 
 void gw_system_sound_init()
 {
 	/* Init Sound */
 	/* clear shared audio buffer with emulator */
 	memset(gw_audio_buffer, 0, sizeof(gw_audio_buffer));
-	gw_audio_buffer_copied = false;
-
 	gw_audio_buffer_idx = 0;
 	mspeaker_data = 0;
 }
 
 static void gw_system_sound_melody(unsigned char data)
 {
-	if (gw_audio_buffer_copied)
-	{
-		gw_audio_buffer_copied = false;
-
-		gw_audio_buffer_idx = gw_audio_buffer_idx - GW_AUDIO_BUFFER_LENGTH;
-
-		if (gw_audio_buffer_idx < 0)
-			gw_audio_buffer_idx = 0;
-
-		// check if some samples have to be copied from the previous loop cycles
-		if (gw_audio_buffer_idx != 0)
-		{
-			for (int i = 0; i < gw_audio_buffer_idx; i++)
-				gw_audio_buffer[i] = gw_audio_buffer[i + GW_AUDIO_BUFFER_LENGTH];
-		}
-	}
-
 	// SM511 R pin is melody output
 	if (gw_melody != 0)
 
@@ -642,6 +622,7 @@ unsigned char gw_readK(unsigned char io_S)
 /* external function use to execute some clock cycles */
 int gw_system_run(int clock_cycles)
 {
+    gw_audio_buffer_idx = 0;
 	// check if a key is pressed to wakeup the system
 	// set K input lines active state
 	m_k_active = (gw_get_buttons() != 0);
