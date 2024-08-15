@@ -191,7 +191,7 @@ static unsigned char mspeaker_data = 0;
 static int gw_audio_buffer_idx = 0;
 
 /* Audio buffer */
-unsigned char gw_audio_buffer[GW_AUDIO_BUFFER_LENGTH * 2];
+unsigned char gw_audio_buffer[GW_AUDIO_BUFFER_LENGTH];
 
 void gw_system_sound_init()
 {
@@ -246,9 +246,11 @@ static void gw_system_sound_melody(unsigned char data)
 		}
 	}
 
-	gw_audio_buffer[gw_audio_buffer_idx] = mspeaker_data;
-
-	gw_audio_buffer_idx++;
+	/* This will guard against overflows */
+	if (gw_audio_buffer_idx < sizeof(gw_audio_buffer)) {
+		gw_audio_buffer[gw_audio_buffer_idx] = mspeaker_data;
+		gw_audio_buffer_idx++;
+	}
 }
 
 void gw_writeR(unsigned char data) { gw_system_sound_melody(data); };
