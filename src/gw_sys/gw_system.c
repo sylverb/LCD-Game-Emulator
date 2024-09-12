@@ -1,6 +1,3 @@
-#include "build/config.h"
-
-#ifdef ENABLE_EMULATOR_GW
 /*
 
 This program implements the main functions to use the LCD Game emulator.
@@ -933,5 +930,3 @@ void gw_system_set_time(gw_time_t time)
 	gw_ram[gw_head.time_sec_address_msb] = time.seconds / 10;
 	gw_ram[gw_head.time_sec_address_lsb] = time.seconds % 10;
 }
-
-#endif

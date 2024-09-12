@@ -1,6 +1,3 @@
-#include "build/config.h"
-
-#ifdef ENABLE_EMULATOR_GW
 // license:BSD-3-Clause
 // copyright-holders:hap, Igor
 // modded by bzhxx
@@ -354,5 +351,3 @@ void sm500_op_sc() { sm510_op_sc(); }
 void sm500_op_cend() { sm510_op_cend(); }
 void sm500_op_dta() { sm510_op_dta(); }
 void sm500_op_illegal() { sm510_op_illegal(); }
-
-#endif

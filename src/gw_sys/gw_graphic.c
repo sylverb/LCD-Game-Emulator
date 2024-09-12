@@ -1,6 +1,3 @@
-#include "build/config.h"
-
-#ifdef ENABLE_EMULATOR_GW
 /*
 
 This program implements the graphics rendering for the different variation
@@ -397,5 +394,3 @@ void gw_gfx_init()
 		update_segment = update_segment_2bits;
 
 }
-
-#endif
