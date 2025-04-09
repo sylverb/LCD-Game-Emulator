@@ -41,6 +41,12 @@ __license__ = "GPLv3"
 #include "gw_system.h"
 #include "gw_romloader.h"
 #include "hw_jpeg_decoder.h"
+#if SD_CARD == 1
+#include "gw_malloc.h"
+#include "rg_storage.h"
+#include "odroid_overlay.h"
+#include "gw_linker.h"
+#endif
 
 
 /* instances for JPEG decoder */
@@ -124,9 +130,23 @@ keyboard[9] is B   (8 bits lsb)
 
 bool gw_romloader_rom2ram()
 {
-
+   const unsigned char *src;
+#if SD_CARD == 1
+    ram_start = (uint32_t)&_OVERLAY_GW_BSS_END;
+    uint32_t size = ROM_DATA_LENGTH;
+    if (ROM_DATA_LENGTH > ram_get_free_size()) {
+        src = odroid_overlay_cache_file_in_flash(ACTIVE_FILE->path, &size, false);
+    } else {
+        src = ram_malloc(size);
+        if (src != NULL) {
+            odroid_overlay_cache_file_in_ram(ACTIVE_FILE->path, (uint8_t *)src);
+        }
+    }
+#else
    /* src pointer to the ROM data in the external flash (raw or LZ4) */
-   const unsigned char *src = (unsigned char *)ROM_DATA;
+   src = (unsigned char *)ROM_DATA;
+#endif
+
 
    /* dest pointer to the ROM data in the internal RAM (raw) */
    unsigned char *dest = (unsigned char *)GW_ROM;
