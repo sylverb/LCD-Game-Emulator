@@ -18,9 +18,7 @@ __license__ = "GPLv3"
 
 */
 
-//to be removed using arguments get rom pointer and size
-#include "rom_manager.h"
-
+#include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -41,9 +39,6 @@ __license__ = "GPLv3"
 #include "gw_system.h"
 #include "gw_romloader.h"
 #include "hw_jpeg_decoder.h"
-#include "gw_malloc.h"
-#include "rg_storage.h"
-#include "odroid_overlay.h"
 
 
 /* instances for JPEG decoder */
@@ -127,26 +122,19 @@ keyboard[9] is B   (8 bits lsb)
 
 bool gw_romloader_rom2ram()
 {
-   const unsigned char *src;
-    uint32_t size = ROM_DATA_LENGTH;
-    if (ROM_DATA_LENGTH > ram_get_free_size()) {
-        src = odroid_overlay_cache_file_in_flash(ACTIVE_FILE->path, &size, false);
-    } else {
-        src = ram_malloc(size);
-        if (src != NULL) {
-            odroid_overlay_cache_file_in_ram(ACTIVE_FILE->path, (uint8_t *)src);
-        }
-    }
+   const unsigned char *src = gw_rom_image;
+   if (src == NULL || gw_rom_image_size == 0)
+      return false;
 
    /* dest pointer to the ROM data in the internal RAM (raw) */
    unsigned char *dest = (unsigned char *)GW_ROM;
 
    /* variable used to compare the size to detect error, uncompressed  */
-   unsigned int rom_size_src  = ROM_DATA_LENGTH;
-   unsigned int rom_size_dest = ROM_DATA_LENGTH;
+   unsigned int rom_size_src  = gw_rom_image_size;
+   unsigned int rom_size_dest = gw_rom_image_size;
 
    /* 1st part on FLASH before JPEG */
-   unsigned int rom_size_compressed_src  = ROM_DATA_LENGTH;
+   unsigned int rom_size_compressed_src  = gw_rom_image_size;
 
    /* cleanup destination memory with white color (in case of no background) */
    memset(dest, 0xffff, sizeof(GW_ROM));
@@ -156,10 +144,10 @@ bool gw_romloader_rom2ram()
    {
       printf("Not compressed : header OK\n");
 
-      memcpy(dest, src, ROM_DATA_LENGTH);
+      memcpy(dest, src, gw_rom_image_size);
       printf("ROM2RAM done\n");
 
-      rom_size_src = ROM_DATA_LENGTH;
+      rom_size_src = gw_rom_image_size;
 
 #ifdef GW_ROM_LZ4_SUPPORT
 
@@ -243,7 +231,7 @@ bool gw_romloader_rom2ram()
       gw_background = (unsigned short *)&GW_ROM[gw_head.background_pixel];
    }
    // otherwise we get the background from JPEG file
-   else if((rom_size_compressed_src+8) != ROM_DATA_LENGTH)
+   else if((rom_size_compressed_src+8) != gw_rom_image_size)
    {
       printf("JPEG background?\n");
 
@@ -251,7 +239,7 @@ bool gw_romloader_rom2ram()
       uint32_t JpegSrc;
       uint32_t FrameDst;
 
-      JpegSrc = (uint32_t)&ROM_DATA[rom_size_compressed_src+8];
+      JpegSrc = (uint32_t)&gw_rom_image[rom_size_compressed_src+8];
 
       /*set destination RGB image, 32 bits aligned */
       FrameDst = (uint32_t)&GW_ROM[rom_size_src + 4 - (rom_size_src % 4)];

@@ -147,6 +147,10 @@ typedef struct gwromheader_s
 
 extern gwromheader_t gw_head;
 
+/* Filled by the porting layer before gw_romloader() — mapped game file. */
+extern const uint8_t *gw_rom_image;
+extern unsigned gw_rom_image_size;
+
 bool gw_romloader();
 
 #endif /* _GW_ROMLOADER_H_ */
