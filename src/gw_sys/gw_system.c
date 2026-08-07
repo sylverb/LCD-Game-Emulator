@@ -31,10 +31,17 @@ __license__ = "GPLv3"
 #include "gw_system.h"
 #include "gw_graphic.h"
 
-static void (*device_reset)();
-static void (*device_start)();
-static void (*device_run)();
-static void (*device_blit)(unsigned short *active_framebuffer);
+/* Initialized (.data), NOT BSS: gw_audio_buffer[] lives in BSS and used to
+ * be laid out immediately before these pointers. A piezo overrun then
+ * replaced device_run with 0x00 samples → hardfault at PC=0 inside
+ * gw_system_run(). Keeping the pointers in .data isolates them. */
+static void device_ptr_stub(void) {}
+static void device_blit_stub(unsigned short *fb) { (void)fb; }
+
+static void (*device_reset)(void) = device_ptr_stub;
+static void (*device_start)(void) = device_ptr_stub;
+static void (*device_run)(void) = device_ptr_stub;
+static void (*device_blit)(unsigned short *active_framebuffer) = device_blit_stub;
 
 static unsigned char previous_dpad;
 static bool gw_keyboard_multikey[8];
@@ -263,9 +270,13 @@ static void gw_system_sound_melody(unsigned char data)
 		}
 	}
 
-	gw_audio_buffer[gw_audio_buffer_idx] = mspeaker_data;
-
-	gw_audio_buffer_idx++;
+	/* Never write past the ring: a long halt/bootstrap can tick the piezo
+	 * far more times than sizeof(gw_audio_buffer) before the host drains
+	 * it, and the next BSS words are device_run / device_reset. */
+	if (gw_audio_buffer_idx < (int)sizeof(gw_audio_buffer)) {
+		gw_audio_buffer[gw_audio_buffer_idx] = mspeaker_data;
+		gw_audio_buffer_idx++;
+	}
 }
 
 void gw_writeR(unsigned char data) { gw_system_sound_melody(data); };
@@ -650,6 +661,9 @@ int gw_system_run(int clock_cycles)
 	//1 CPU operation in 4 clock cycles
 	if (m_clk_div == 4)
 		m_icount += (clock_cycles / 4);
+
+	if (!device_run)
+		return 0;
 
 	device_run();
 
