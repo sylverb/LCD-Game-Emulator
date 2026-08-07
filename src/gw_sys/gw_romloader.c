@@ -44,7 +44,6 @@ __license__ = "GPLv3"
 #include "gw_malloc.h"
 #include "rg_storage.h"
 #include "odroid_overlay.h"
-#include "gw_linker.h"
 
 
 /* instances for JPEG decoder */
@@ -129,7 +128,6 @@ keyboard[9] is B   (8 bits lsb)
 bool gw_romloader_rom2ram()
 {
    const unsigned char *src;
-    ram_start = (uint32_t)&_OVERLAY_GW_BSS_END;
     uint32_t size = ROM_DATA_LENGTH;
     if (ROM_DATA_LENGTH > ram_get_free_size()) {
         src = odroid_overlay_cache_file_in_flash(ACTIVE_FILE->path, &size, false);
